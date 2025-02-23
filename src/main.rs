@@ -8,7 +8,7 @@ use std::process;
 
 mod ai;
 use ai::send_image_request;
-use ai::send_chat_request;
+use ai::send_chat_stream_request;
 use ai::OpenAiModel;
 
 #[tokio::main]
@@ -22,7 +22,7 @@ async fn main() {
          }
     } else {
         prompt.push_str(&vec_str_to_str(args.prompt));
-        match send_chat_request(OpenAiModel::O3Mini, prompt).await {
+        match send_chat_stream_request(OpenAiModel::O3Mini, prompt).await {
              Ok(()) => { process::exit(0) },
             Err(e) => { println!("Error occured when requesting chat response from the API: {}", e )}
         }

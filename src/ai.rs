@@ -1,4 +1,8 @@
+
+use async_openai::types::CreateChatCompletionRequest;
 use std::error::Error;
+use std::io::{stdout, Write};
+use tokio_stream::StreamExt;
 use async_openai::{
     types::{CreateImageRequestArgs, ImageSize, ImageResponseFormat, ChatCompletionRequestAssistantMessageArgs, ChatCompletionRequestSystemMessageArgs,
         ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequestArgs},
@@ -8,7 +12,7 @@ use async_openai::{
 pub enum OpenAiModel {
     Chatgpt4oLatest,
     Chatgpt4oMini,
-    O3Mini,
+    O3Mini
 }
 
 impl OpenAiModel {
@@ -45,11 +49,44 @@ pub async fn send_image_request( image_count: u8, prompt:
     Ok(())
 }
 
+pub async fn send_chat_stream_request(model: OpenAiModel, prompt: String) -> Result<(), Box<dyn Error>> {
+    let client = Client::new();
+    let request = build_chat_request(model, prompt);
+    let mut stream = client.chat().create_stream(request?).await?;
+    let mut lock = stdout().lock();
+    while let Some(result) = stream.next().await {
+        match result {
+            Ok(response) => {
+                response.choices.iter().for_each(|chat_choice| {
+                    if let Some(ref content) = chat_choice.delta.content {
+                        write!(lock, "{}", content).unwrap();
+                    }
+                });
+            }
+            Err(err) => {
+                writeln!(lock, "error: {err}").unwrap();
+            }
+        }
+        stdout().flush()?;
+    }
+    
+    Ok(())
+}
 
 pub async fn send_chat_request(model: OpenAiModel, prompt: String) -> Result<(), Box<dyn Error>> {
     let client = Client::new();
-    let request = CreateChatCompletionRequestArgs::default()
-        .max_completion_tokens(512u32)
+    let request = build_chat_request(model, prompt); 
+    let response = client.chat().create(request?).await?;
+    for choice in response.choices {
+        println!("\n{}", choice.message.content.unwrap_or("".to_string()));
+    }
+    
+    Ok(())
+}
+
+fn build_chat_request(model: OpenAiModel, prompt: String) -> Result<CreateChatCompletionRequest, Box<dyn Error>> {
+     let request = CreateChatCompletionRequestArgs::default()
+        .max_completion_tokens(1000u32)
         .model(model.as_str())
         .messages([
             ChatCompletionRequestSystemMessageArgs::default()
@@ -77,10 +114,6 @@ pub async fn send_chat_request(model: OpenAiModel, prompt: String) -> Result<(),
                 .build()?
                 .into(),
         ]).build()?;
-        let response = client.chat().create(request).await?;
-        for choice in response.choices {
-            println!("\n{}", choice.message.content.unwrap_or("".to_string()));
-        }
-    
-    Ok(())
+
+        Ok(request)
 }
