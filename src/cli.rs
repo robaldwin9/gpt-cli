@@ -8,31 +8,7 @@ use clap::Parser;
 pub struct Args {
 	#[clap(long, short, action)]
 	pub image: bool,
-    pub prompt: Vec<String>,
-}
-
-pub enum Commands {
-    Image,
-    Chat
-}
-
-impl Commands {
-	    fn as_str(&self) -> &str {
-        match self {
-            Commands::Image => "Image",
-            Commands::Chat => "Chat"
-        }
-    }
-}
-
-
-pub fn vec_str_to_str(vec_str: Vec<String>) -> String {
-	let mut output = String::from("");
-
-	for item in vec_str {
-		output += &item;
-	}
-	output
+    pub prompt: String,
 }
 
 pub async fn read_from_stdin_timeout(timeout: Duration) -> String {
