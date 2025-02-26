@@ -1,12 +1,9 @@
-
+use async_openai::{
+    types::{CreateImageRequestArgs,
+            ImageResponseFormat, ImageSize}, Client};
 use std::error::Error;
 use std::io::{stdout, Write};
 use tokio_stream::StreamExt;
-use async_openai::{
-    types::{CreateImageRequestArgs, ImageSize, ImageResponseFormat, ChatCompletionRequestAssistantMessageArgs,
-        ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequestArgs},
-    Client,
-};
 
 pub mod model;
 use model::OpenAiModel;
@@ -14,10 +11,7 @@ use model::OpenAiModel;
 mod messages;
 use messages::Messages;
 
-
-
-pub async fn send_image_request( image_count: u8, prompt:
- &str) -> Result<(), Box<dyn Error>> {
+pub async fn send_image_request(image_count: u8, prompt:&str) -> Result<(), Box<dyn Error>> {
     let client = Client::new();
     let request = CreateImageRequestArgs::default()
         .prompt(prompt)
@@ -30,24 +24,15 @@ pub async fn send_image_request( image_count: u8, prompt:
     let response = client.images().create(request).await?;
 
     let paths = response.save("./data").await?;
-   paths.iter().for_each(|path| println!("Image file path: {}", path.display()));
+    paths.iter().for_each(|path| println!("Image file path: {}", path.display()));
     Ok(())
 }
 
-pub async fn send_chat_stream_request(model: OpenAiModel, prompt: String) -> Result<(), Box<dyn Error>> {
-    let mut chat_history = Messages {messages: Vec::new()};
-    chat_history.load();
+pub async fn send_chat_stream_request(model: OpenAiModel, prompt: String, max_tokens: u32) -> Result<(), Box<dyn Error>> {
+    let mut chat_history = Messages::init_load_push(prompt)?;
+    let request = chat_history.init_request(model, max_tokens)?;
+
     let client = Client::new();
-
-    let new_message = ChatCompletionRequestUserMessageArgs::default().content(prompt).build()?.into();
-    chat_history.push(new_message);
-
-    let request = CreateChatCompletionRequestArgs::default()
-        .max_completion_tokens(1000u32)
-        .model(model.as_str())
-        .messages(chat_history.messages.clone()).build()?;
-
-
     let mut response_string = String::from("");
     let mut stream = client.chat().create_stream(request).await?;
     let mut lock = stdout().lock();
@@ -68,29 +53,15 @@ pub async fn send_chat_stream_request(model: OpenAiModel, prompt: String) -> Res
         stdout().flush()?;
     }
 
-
-    let ai_response = ChatCompletionRequestAssistantMessageArgs::default().content(response_string).build()?.into();
-
-    chat_history.push(ai_response);
-    chat_history.save();
-    
+    chat_history.push_then_save(response_string)?;
     Ok(())
 }
 
-pub async fn send_chat_request(model: OpenAiModel, prompt: String) -> Result<(), Box<dyn Error>> {
-    let mut chat_history = Messages {messages: Vec::new()};
-    chat_history.load();
+pub async fn send_chat_request(model: OpenAiModel, prompt: String, max_tokens: u32) -> Result<(), Box<dyn Error>> {
+    let mut chat_history = Messages::init_load_push(prompt)?;
+    let request = chat_history.init_request(model, max_tokens)?;
+
     let client = Client::new();
-
-    let new_message = ChatCompletionRequestUserMessageArgs::default().content(prompt).build()?.into();
-    chat_history.push(new_message);
-
-    let request = CreateChatCompletionRequestArgs::default()
-        .max_completion_tokens(1000u32)
-        .model(model.as_str())
-        .messages(chat_history.messages.clone()).build()?;
-    
-
     let response = client.chat().create(request).await?;
     let mut response_string = String::from("");
     for choice in response.choices {
@@ -98,10 +69,6 @@ pub async fn send_chat_request(model: OpenAiModel, prompt: String) -> Result<(),
     }
 
     println!("{}", response_string);
-    let ai_response = ChatCompletionRequestAssistantMessageArgs::default().content(response_string).build()?.into();
-
-    chat_history.push(ai_response);
-    chat_history.save();
-    
+    chat_history.push_then_save(response_string)?;
     Ok(())
 }

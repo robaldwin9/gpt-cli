@@ -1,10 +1,11 @@
+
+use serde::{Serialize, Deserialize};
+#[derive(Deserialize, Serialize)]
 pub enum OpenAiModel {
     Chatgpt4oLatest,
     Chatgpt4oMini,
     O3Mini
 }
-
-
 
 impl OpenAiModel {
     pub fn as_str(&self) -> &str {
@@ -12,6 +13,20 @@ impl OpenAiModel {
             OpenAiModel::Chatgpt4oLatest => "chatgpt-4o-latest",
             OpenAiModel::Chatgpt4oMini => "gpt-4o-mini",
             OpenAiModel::O3Mini => "o3-mini"
+        }
+    }
+
+    pub fn default() -> Self {
+        OpenAiModel::O3Mini
+    }
+
+    pub fn from_str(model: &str) -> Self {
+        match model {
+            "chatgpt-4o-latest" => OpenAiModel::Chatgpt4oLatest,
+            "gpt-4o-minigpt-4o-mini" => OpenAiModel::Chatgpt4oMini,
+            "o3-mini" => OpenAiModel::O3Mini,
+            _ => OpenAiModel::default()
+
         }
     }
 }

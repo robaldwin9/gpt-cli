@@ -9,6 +9,9 @@ use std::env;
 use std::fs::create_dir;
 use serde::{Serialize, Deserialize};
 use async_openai::{ types::{ChatCompletionRequestMessage}};
+use async_openai::error::OpenAIError;
+use async_openai::types::{ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequest, CreateChatCompletionRequestArgs};
+use crate::openai::model::OpenAiModel;
 
 #[derive(Deserialize, Serialize)]
 pub struct Messages {
@@ -20,7 +23,6 @@ impl Messages {
 		self.messages.len() as u32
 	}
 
-
  pub fn save(&self) {
         match get_list_file_path() {
             Ok(path) => {
@@ -31,9 +33,9 @@ impl Messages {
                     .open(path)
                 {
                     Ok(mut file) => {
-                        let serizlized_todo_list =
+                        let serialized_messages_list =
                             serde_json::to_string(&self.messages).expect("invalid json");
-                        file.write_all(serizlized_todo_list.as_bytes())
+                        file.write_all(serialized_messages_list.as_bytes())
                             .expect("Failed to save open ai chat to file");
                     }
                     Err(e) => {
@@ -50,8 +52,7 @@ impl Messages {
             }
         };
     }
-
-
+    
 	pub fn load(&mut self) {
 		match get_list_file_path() {
             Ok(path) => {
@@ -80,10 +81,38 @@ impl Messages {
         }; 
 	}
 
-    pub fn push(&mut self, message: ChatCompletionRequestMessage) {
-        self.messages.push(message);
+    pub fn push(&mut self, prompt: String) -> Result<(), OpenAIError> {
+        let new_message = ChatCompletionRequestUserMessageArgs::default().content(prompt).build()?;
+        self.messages.push(ChatCompletionRequestMessage::from(new_message));
+        Ok(())
+    }
+    pub fn new () -> Self {
+        Messages {messages: Vec::new()}
     }
 
+    pub fn push_then_save(&mut self, prompt: String) -> Result<(), OpenAIError> {
+        self.push(prompt)?;
+        self.save();
+        Ok(())
+    }
+
+    pub fn load_then_push(&mut self, prompt: String) -> Result<(), OpenAIError> {
+        self.load();
+        self.push(prompt)
+    }
+
+    pub fn init_load_push(prompt: String) -> Result<Self, OpenAIError> {
+        let mut messages = Messages::new();
+        messages.load_then_push(prompt)?;
+        Ok(messages)
+    }
+
+    pub fn init_request(&mut self, model: OpenAiModel, max_tokens: u32) -> Result<CreateChatCompletionRequest, OpenAIError> {
+        CreateChatCompletionRequestArgs::default()
+            .max_completion_tokens(max_tokens)
+            .model(model.as_str())
+            .messages(&*self.messages).build()
+    }
 }
 
 fn get_list_file_path() -> io::Result<PathBuf> {
