@@ -11,8 +11,6 @@ use openai::send_chat_request;
 use openai::model::OpenAiModel;
 
 mod config;
-mod tests;
-
 use config::Config;
 
 #[tokio::main]
