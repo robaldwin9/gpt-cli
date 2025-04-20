@@ -1,9 +1,10 @@
+use std::env;
 use async_openai::{
     types::{CreateImageRequestArgs,
             ImageResponseFormat, ImageSize}, Client};
 use std::error::Error;
 use std::io::{stdout, Write};
-use async_openai::types::{CreateModerationRequestArgs};
+use async_openai::types::{CreateModerationRequestArgs, ImageModel};
 use tokio_stream::StreamExt;
 
 pub mod model;
@@ -20,13 +21,17 @@ pub async fn send_image_request(image_count: u8, prompt:&str) -> Result<(), Box<
                 let request = CreateImageRequestArgs::default()
                     .prompt(prompt)
                     .n(image_count)
+                    .model(ImageModel::DallE3)
                     .response_format(ImageResponseFormat::Url)
-                    .size(ImageSize::S256x256)
+                    .size(ImageSize::S1024x1024)
                     .user("gpt-cli")
                     .build()?;
 
                 let response = client.images().create(request).await?;
-                let paths = response.save("./data").await?;
+                let mut dir = env::current_exe()?;
+                dir.pop();
+                dir.push("data");
+                let paths = response.save(dir).await?;
                 paths.iter().for_each(|path| println!("Image file path: {}", path.display()));
             } else { 
                 println!("Prompt was flagged for moderation, it will not be sent.");
