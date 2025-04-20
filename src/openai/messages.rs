@@ -1,26 +1,28 @@
-
-use std::io::Write;
-use std::fs::OpenOptions;
-use std::io::BufReader;
-use std::fs::File;
-use std::io;
-use std::path::PathBuf;
+use crate::openai::model::OpenAiModel;
+use async_openai::error::OpenAIError;
+use async_openai::types::ChatCompletionRequestMessage;
+use async_openai::types::{
+    ChatCompletionRequestAssistantMessageArgs, ChatCompletionRequestSystemMessageArgs,
+    ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequest,
+    CreateChatCompletionRequestArgs,
+};
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs::create_dir;
-use serde::{Serialize, Deserialize};
-use async_openai::{ types::{ChatCompletionRequestMessage}};
-use async_openai::error::OpenAIError;
-use async_openai::types::{ChatCompletionRequestAssistantMessageArgs, ChatCompletionRequestSystemMessageArgs, ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequest, CreateChatCompletionRequestArgs};
-use crate::openai::model::OpenAiModel;
+use std::fs::File;
+use std::fs::OpenOptions;
+use std::io;
+use std::io::BufReader;
+use std::io::Write;
+use std::path::PathBuf;
 
 #[derive(Deserialize, Serialize)]
 pub struct Messages {
-	pub messages: Vec<ChatCompletionRequestMessage>
+    pub messages: Vec<ChatCompletionRequestMessage>,
 }
 
 impl Messages {
-
- pub fn save(&self) {
+    pub fn save(&self) {
         match get_list_file_path() {
             Ok(path) => {
                 match OpenOptions::new()
@@ -49,9 +51,9 @@ impl Messages {
             }
         };
     }
-    
-	pub fn load(&mut self) {
-		match get_list_file_path() {
+
+    pub fn load(&mut self) {
+        match get_list_file_path() {
             Ok(path) => {
                 if path.exists() {
                     match OpenOptions::new().read(true).open(path) {
@@ -59,7 +61,11 @@ impl Messages {
                             let metadata = file.metadata().expect("could not get file metadata");
                             if metadata.len() != 0 {
                                 let reader = BufReader::new(file);
-                                self.messages = serde_json::from_reader::<BufReader<File>, Vec<ChatCompletionRequestMessage>>(reader).expect("Badly formated json");
+                                self.messages = serde_json::from_reader::<
+                                    BufReader<File>,
+                                    Vec<ChatCompletionRequestMessage>,
+                                >(reader)
+                                .expect("Badly formated json");
                             }
                         }
                         Err(e) => {
@@ -75,32 +81,46 @@ impl Messages {
                     e
                 )
             }
-        }; 
-	}
+        };
+    }
 
     pub fn push_user_message(&mut self, prompt: String) -> Result<(), OpenAIError> {
-        let new_message = ChatCompletionRequestUserMessageArgs::default().content(prompt).build()?;
-        self.messages.push(ChatCompletionRequestMessage::from(new_message));
+        let new_message = ChatCompletionRequestUserMessageArgs::default()
+            .content(prompt)
+            .build()?;
+        self.messages
+            .push(ChatCompletionRequestMessage::from(new_message));
         Ok(())
     }
 
     pub fn push_assistant_message(&mut self, prompt: String) -> Result<(), OpenAIError> {
-        let new_message = ChatCompletionRequestAssistantMessageArgs::default().content(prompt).build()?;
-        self.messages.push(ChatCompletionRequestMessage::from(new_message));
+        let new_message = ChatCompletionRequestAssistantMessageArgs::default()
+            .content(prompt)
+            .build()?;
+        self.messages
+            .push(ChatCompletionRequestMessage::from(new_message));
         Ok(())
     }
 
     pub fn push_system_message(&mut self, prompt: String) -> Result<(), OpenAIError> {
-        let new_message = ChatCompletionRequestSystemMessageArgs::default().content(prompt).build()?;
-        self.messages.push(ChatCompletionRequestMessage::from(new_message));
+        let new_message = ChatCompletionRequestSystemMessageArgs::default()
+            .content(prompt)
+            .build()?;
+        self.messages
+            .push(ChatCompletionRequestMessage::from(new_message));
         Ok(())
     }
 
-    pub fn new () -> Self {
-        let mut messages = Messages {messages: Vec::new()};
-        match messages.push_system_message("you are a helpful CLI assistant, \
+    pub fn new() -> Self {
+        let mut messages = Messages {
+            messages: Vec::new(),
+        };
+        match messages.push_system_message(
+            "you are a helpful CLI assistant, \
         all your answers will be output to the terminal. \
-        Responses should be formatted so they are easy to read".to_string()) {
+        Responses should be formatted so they are easy to read"
+                .to_string(),
+        ) {
             Ok(_) => {}
             Err(e) => {
                 println!("Error pushing system message: {}", e);
@@ -109,8 +129,10 @@ impl Messages {
         messages
     }
 
-    pub fn from (system_message: String) -> Self {
-        let mut messages = Messages {messages: Vec::new()};
+    pub fn from(system_message: String) -> Self {
+        let mut messages = Messages {
+            messages: Vec::new(),
+        };
         match messages.push_system_message(system_message) {
             Ok(_) => {}
             Err(e) => {
@@ -137,11 +159,16 @@ impl Messages {
         Ok(messages)
     }
 
-    pub fn init_request(&mut self, model: OpenAiModel, max_tokens: u32) -> Result<CreateChatCompletionRequest, OpenAIError> {
+    pub fn init_request(
+        &mut self,
+        model: OpenAiModel,
+        max_tokens: u32,
+    ) -> Result<CreateChatCompletionRequest, OpenAIError> {
         CreateChatCompletionRequestArgs::default()
             .max_completion_tokens(max_tokens)
             .model(model.as_str())
-            .messages(&*self.messages).build()
+            .messages(&*self.messages)
+            .build()
     }
 }
 

@@ -1,9 +1,13 @@
-
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize)]
 pub enum OpenAiModel {
-    Chatgpt4oLatest, Chatgpt4oMini,
-    Gpt4o, O3Mini, OmniModerationLatest, Dalle2, Dalle3
+    Chatgpt4oLatest,
+    Chatgpt4oMini,
+    Gpt4o,
+    O3Mini,
+    OmniModerationLatest,
+    Dalle2,
+    Dalle3,
 }
 
 impl OpenAiModel {
@@ -15,8 +19,7 @@ impl OpenAiModel {
             OpenAiModel::O3Mini => "o3-mini",
             OpenAiModel::OmniModerationLatest => "omni-moderation-latest",
             OpenAiModel::Dalle2 => "dall-e-2",
-            OpenAiModel::Dalle3 => "dall-e-3"
-            
+            OpenAiModel::Dalle3 => "dall-e-3",
         }
     }
 
@@ -33,8 +36,7 @@ impl OpenAiModel {
             "omni-moderation-latest" => OpenAiModel::OmniModerationLatest,
             "dall-e-2" => OpenAiModel::Dalle2,
             "dall-e-3" => OpenAiModel::Dalle3,
-            _ => OpenAiModel::default()
-
+            _ => OpenAiModel::default(),
         }
     }
 }

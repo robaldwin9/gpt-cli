@@ -1,9 +1,9 @@
-use std::{env, io};
+use crate::openai::model::OpenAiModel;
+use serde::{Deserialize, Serialize};
 use std::fs::{create_dir, OpenOptions};
 use std::io::{BufReader, Write};
 use std::path::PathBuf;
-use serde::{Serialize, Deserialize};
-use crate::openai::model::OpenAiModel;
+use std::{env, io};
 
 #[derive(Deserialize, Serialize)]
 pub struct Config {
@@ -52,13 +52,14 @@ impl Config {
                 if path.exists() {
                     match OpenOptions::new().read(true).open(path) {
                         Ok(file) => {
-                            let metadata = file.metadata().expect("could not get config file metadata");
+                            let metadata =
+                                file.metadata().expect("could not get config file metadata");
                             if metadata.len() != 0 {
                                 let reader = BufReader::new(file);
                                 match serde_yaml::from_reader(reader) {
                                     Ok(loaded_config) => {
                                         config = loaded_config;
-                                    },
+                                    }
                                     Err(e) => {
                                         println!("Error loading config file {}", e);
                                     }
@@ -85,12 +86,19 @@ impl Config {
         config
     }
 
-    pub fn new () -> Self {
-        Config  {open_ai_model: String::from(OpenAiModel::Gpt4o.as_str()),
-            open_ai_max_tokens: 2000, open_ai_stream_chat: true, stdin_read_time: 2000,
-        system_message: String::from("you are a helpful CLI assistant, \
+    pub fn new() -> Self {
+        Config {
+            open_ai_model: String::from(OpenAiModel::Gpt4o.as_str()),
+            open_ai_max_tokens: 2000,
+            open_ai_stream_chat: true,
+            stdin_read_time: 2000,
+            system_message: String::from(
+                "you are a helpful CLI assistant, \
         all your answers will be output to the terminal. \
-        Responses should be formatted so they are easy to read".to_string())}
+        Responses should be formatted so they are easy to read"
+                    .to_string(),
+            ),
+        }
     }
 }
 
