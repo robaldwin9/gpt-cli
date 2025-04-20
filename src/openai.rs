@@ -57,8 +57,8 @@ pub async fn send_chat_stream_request(model: OpenAiModel, prompt: String, max_to
     Ok(())
 }
 
-pub fn clear_history() {
-    Messages::new().save()
+pub fn clear_history(system_message: String) {
+    Messages::from(system_message).save();
 }
 
 pub async fn send_chat_request(model: OpenAiModel, prompt: String, max_tokens: u32) -> Result<(), Box<dyn Error>> {

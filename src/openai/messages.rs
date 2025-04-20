@@ -10,7 +10,7 @@ use std::fs::create_dir;
 use serde::{Serialize, Deserialize};
 use async_openai::{ types::{ChatCompletionRequestMessage}};
 use async_openai::error::OpenAIError;
-use async_openai::types::{ChatCompletionRequestSystemMessageArgs, ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequest, CreateChatCompletionRequestArgs};
+use async_openai::types::{ChatCompletionRequestAssistantMessageArgs, ChatCompletionRequestSystemMessageArgs, ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequest, CreateChatCompletionRequestArgs};
 use crate::openai::model::OpenAiModel;
 
 #[derive(Deserialize, Serialize)]
@@ -85,13 +85,39 @@ impl Messages {
     }
     
     pub fn push_assistant_message(&mut self, prompt: String) -> Result<(), OpenAIError> {
+        let new_message = ChatCompletionRequestAssistantMessageArgs::default().content(prompt).build()?;
+        self.messages.push(ChatCompletionRequestMessage::from(new_message));
+        Ok(())
+    }
+
+    pub fn push_system_message(&mut self, prompt: String) -> Result<(), OpenAIError> {
         let new_message = ChatCompletionRequestSystemMessageArgs::default().content(prompt).build()?;
         self.messages.push(ChatCompletionRequestMessage::from(new_message));
         Ok(())
     }
     
     pub fn new () -> Self {
-        Messages {messages: Vec::new()}
+        let mut messages = Messages {messages: Vec::new()};
+        match messages.push_system_message("you are a helpful CLI assistant, \
+        all your answers will be output to the terminal. \
+        Responses should be formatted so they are easy to read".to_string()) {
+            Ok(_) => {}
+            Err(e) => {
+                println!("Error pushing system message: {}", e);
+            }
+        }
+        messages
+    }
+
+    pub fn from (system_message: String) -> Self {
+        let mut messages = Messages {messages: Vec::new()};
+        match messages.push_system_message(system_message) {
+            Ok(_) => {}
+            Err(e) => {
+                println!("Error pushing system message: {}", e);
+            }
+        }
+        messages
     }
 
     pub fn push_then_save(&mut self, prompt: String) -> Result<(), OpenAIError> {

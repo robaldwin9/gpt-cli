@@ -8,6 +8,7 @@ use crate::openai::model::OpenAiModel;
 #[derive(Deserialize, Serialize)]
 pub struct Config {
     pub open_ai_model: String,
+    pub system_message: String,
     pub open_ai_max_tokens: u32,
     pub open_ai_stream_chat: bool,
     pub stdin_read_time: u64,
@@ -86,7 +87,10 @@ impl Config {
     
     pub fn new () -> Self {
         Config  {open_ai_model: String::from(OpenAiModel::Gpt4o.as_str()),
-            open_ai_max_tokens: 2000, open_ai_stream_chat: true, stdin_read_time: 2000}
+            open_ai_max_tokens: 2000, open_ai_stream_chat: true, stdin_read_time: 2000,
+        system_message: String::from("you are a helpful CLI assistant, \
+        all your answers will be output to the terminal. \
+        Responses should be formatted so they are easy to read".to_string())}
     }
 }
 

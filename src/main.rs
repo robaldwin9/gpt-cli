@@ -22,7 +22,7 @@ async fn main() {
     
     // Clear chat history
     if args.reset {
-        clear_history();
+        clear_history(config.system_message);
     }
 
     // image generation selected
