@@ -9,10 +9,10 @@ use openai::send_image_request;
 use openai::send_chat_stream_request;
 use openai::send_chat_request;
 use openai::model::OpenAiModel;
-use openai::messages::Messages;
 
 mod config;
 use config::Config;
+use crate::openai::clear_history;
 
 #[tokio::main]
 async fn main() {
@@ -22,7 +22,7 @@ async fn main() {
     
     // Clear chat history
     if args.reset {
-        Messages::new().save();
+        clear_history();
     }
 
     // image generation selected

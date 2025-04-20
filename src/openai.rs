@@ -8,7 +8,7 @@ use tokio_stream::StreamExt;
 pub mod model;
 use model::OpenAiModel;
 
-pub(crate) mod messages;
+mod messages;
 use messages::Messages;
 
 pub async fn send_image_request(image_count: u8, prompt:&str) -> Result<(), Box<dyn Error>> {
@@ -55,6 +55,10 @@ pub async fn send_chat_stream_request(model: OpenAiModel, prompt: String, max_to
 
     chat_history.push_then_save(response_string)?;
     Ok(())
+}
+
+pub fn clear_history() {
+    Messages::new().save()
 }
 
 pub async fn send_chat_request(model: OpenAiModel, prompt: String, max_tokens: u32) -> Result<(), Box<dyn Error>> {

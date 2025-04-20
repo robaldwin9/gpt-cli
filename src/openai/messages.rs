@@ -10,7 +10,7 @@ use std::fs::create_dir;
 use serde::{Serialize, Deserialize};
 use async_openai::{ types::{ChatCompletionRequestMessage}};
 use async_openai::error::OpenAIError;
-use async_openai::types::{ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequest, CreateChatCompletionRequestArgs};
+use async_openai::types::{ChatCompletionRequestSystemMessageArgs, ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequest, CreateChatCompletionRequestArgs};
 use crate::openai::model::OpenAiModel;
 
 #[derive(Deserialize, Serialize)]
@@ -78,24 +78,31 @@ impl Messages {
         }; 
 	}
 
-    pub fn push(&mut self, prompt: String) -> Result<(), OpenAIError> {
+    pub fn push_user_message(&mut self, prompt: String) -> Result<(), OpenAIError> {
         let new_message = ChatCompletionRequestUserMessageArgs::default().content(prompt).build()?;
         self.messages.push(ChatCompletionRequestMessage::from(new_message));
         Ok(())
     }
+    
+    pub fn push_assistant_message(&mut self, prompt: String) -> Result<(), OpenAIError> {
+        let new_message = ChatCompletionRequestSystemMessageArgs::default().content(prompt).build()?;
+        self.messages.push(ChatCompletionRequestMessage::from(new_message));
+        Ok(())
+    }
+    
     pub fn new () -> Self {
         Messages {messages: Vec::new()}
     }
 
     pub fn push_then_save(&mut self, prompt: String) -> Result<(), OpenAIError> {
-        self.push(prompt)?;
+        self.push_assistant_message(prompt)?;
         self.save();
         Ok(())
     }
 
     pub fn load_then_push(&mut self, prompt: String) -> Result<(), OpenAIError> {
         self.load();
-        self.push(prompt)
+        self.push_user_message(prompt)
     }
 
     pub fn init_load_push(prompt: String) -> Result<Self, OpenAIError> {
