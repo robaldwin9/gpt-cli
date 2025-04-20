@@ -83,7 +83,7 @@ impl Messages {
         self.messages.push(ChatCompletionRequestMessage::from(new_message));
         Ok(())
     }
-    
+
     pub fn push_assistant_message(&mut self, prompt: String) -> Result<(), OpenAIError> {
         let new_message = ChatCompletionRequestAssistantMessageArgs::default().content(prompt).build()?;
         self.messages.push(ChatCompletionRequestMessage::from(new_message));
@@ -95,7 +95,7 @@ impl Messages {
         self.messages.push(ChatCompletionRequestMessage::from(new_message));
         Ok(())
     }
-    
+
     pub fn new () -> Self {
         let mut messages = Messages {messages: Vec::new()};
         match messages.push_system_message("you are a helpful CLI assistant, \

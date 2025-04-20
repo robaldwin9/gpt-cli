@@ -19,7 +19,7 @@ async fn main() {
     let args = Args::parse();
     let config = Config::new().load();
     let mut prompt = cli::read_from_stdin_timeout(Duration::from_millis(config.stdin_read_time)).await;
-    
+
     // Clear chat history
     if args.reset {
         clear_history(config.system_message);
