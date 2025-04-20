@@ -8,7 +8,7 @@ use tokio_stream::StreamExt;
 pub mod model;
 use model::OpenAiModel;
 
-mod messages;
+pub(crate) mod messages;
 use messages::Messages;
 
 pub async fn send_image_request(image_count: u8, prompt:&str) -> Result<(), Box<dyn Error>> {

@@ -10,7 +10,8 @@ pub struct Args {
 	pub image: bool,
 
     #[clap(long, short, action)]
-    pub save: bool,
+    pub reset: bool,
+    
     pub prompt: String,
 }
 

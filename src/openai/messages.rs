@@ -19,9 +19,6 @@ pub struct Messages {
 }
 
 impl Messages {
-	fn size(&self) -> u32 {
-		self.messages.len() as u32
-	}
 
  pub fn save(&self) {
         match get_list_file_path() {

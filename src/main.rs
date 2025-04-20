@@ -9,6 +9,7 @@ use openai::send_image_request;
 use openai::send_chat_stream_request;
 use openai::send_chat_request;
 use openai::model::OpenAiModel;
+use openai::messages::Messages;
 
 mod config;
 use config::Config;
@@ -16,17 +17,18 @@ use config::Config;
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
-    let config = Config::new();
+    let config = Config::new().load();
     let mut prompt = cli::read_from_stdin_timeout(Duration::from_millis(config.stdin_read_time)).await;
+    
+    // Clear chat history
+    if args.reset {
+        Messages::new().save();
+    }
 
     // image generation selected
     if args.image {
          match send_image_request(1, &args.prompt).await {
-            Ok(()) => {
-                if args.save {
-                    config.save();
-                }
-            },
+            Ok(()) => {},
             Err(e) => { println!("Error occurred when requesting image generation from API: {}", e )}
          }
     // chat request selected
@@ -36,26 +38,16 @@ async fn main() {
         if config.open_ai_stream_chat {
             match send_chat_stream_request(OpenAiModel::from_str(&config.open_ai_model), prompt, config.open_ai_max_tokens).await {
                 Ok(()) => {
-                    if args.save {
-                        config.save();
-                    }
                 },
                 Err(e) => { println!("Error occurred when requesting chat response from the API: {}", e )}
             }
         } else {
               match send_chat_request(OpenAiModel::from_str(&config.open_ai_model), prompt, config.open_ai_max_tokens).await {
                 Ok(()) => {
-                    if args.save {
-                        config.save();
-                    }
                 },
                 Err(e) => { println!("Error occurred when requesting chat response from the API: {}", e )}
             }   
 
-        }
-
-        if args.save {
-            config.save()
         }
     }
 }
